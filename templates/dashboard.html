@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cyber-Tactical Dashboard</title>
+  <style>
+    body { background: #0b0e14; color: #00ff66; font-family: 'Courier New', monospace; padding: 40px; }
+    .card { border: 1px solid #00ff66; padding: 20px; max-width: 500px; margin: auto; box-shadow: 0 0 15px rgba(0,255,102,0.2); }
+    input { background: #161b22; border: 1px solid #00ff66; color: #00ff66; padding: 8px; width: 65%; font-family: inherit; }
+    button { background: #00ff66; color: #0b0e14; border: none; padding: 8px 15px; font-weight: bold; cursor: pointer; }
+    .hidden { display: none; }
+    .metric { margin: 10px 0; border-bottom: 1px dashed #333; padding-bottom: 5px; }
+    #msg { color: #ff3333; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+  <div id="auth-section" class="card">
+    <h2>[ AUTHENTICATION REQUIRED ]</h2>
+    <p>Enter Token:</p>
+    <input type="password" id="token-input" placeholder="Token...">
+    <button onclick="authenticate()">Unlock</button>
+    <div id="msg"></div>
+  </div>
+
+  <div id="dash-section" class="card hidden">
+    <h2>[ SYSTEM DIAGNOSTIC MONITOR ]</h2>
+    <div class="metric">Host: <span id="host">-</span></div>
+    <div class="metric">OS: <span id="os">-</span></div>
+    <div class="metric">IP: <span id="ip">-</span></div>
+    <div class="metric">CPU Usage: <span id="cpu">-</span>%</div>
+    <div class="metric">RAM Usage: <span id="ram">-</span>%</div>
+    <div class="metric">Free Disk Space: <span id="disk">-</span> GB</div>
+  </div>
+
+<script>
+async function loadData() {
+  const token = sessionStorage.getItem('token');
+  if (!token) return;
+
+  try {
+    const res = await fetch('YOUR_HTTPS_DIRECTORY', {
+      headers: { 
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      document.getElementById('auth-section').classList.add('hidden');
+      document.getElementById('dash-section').classList.remove('hidden');
+
+      document.getElementById('host').innerText = data.hostname || 'N/A';
+      document.getElementById('os').innerText = data.os || 'N/A';
+      document.getElementById('ip').innerText = data.ip_address || 'N/A';
+      document.getElementById('cpu').innerText = data.cpu_usage || '0';
+      document.getElementById('ram').innerText = data.ram_usage || '0';
+      document.getElementById('disk').innerText = data.disk_free_gb || '0';
+    } else {
+      document.getElementById('msg').innerText = "Unknown Token (Error " + res.status + ")";
+      sessionStorage.removeItem('token');
+    }
+  } catch (e) {
+    document.getElementById('msg').innerText = "Error while connecting!";
+    console.error("Error:", e);
+  }
+}
+
+function authenticate() {
+  const val = document.getElementById('token-input').value.trim();
+  sessionStorage.setItem('token', val);
+  loadData();
+}
+
+if (sessionStorage.getItem('token')) {
+  loadData();
+}
+
+setInterval(() => {
+  if (sessionStorage.getItem('token')) loadData();
+}, 3000);
+</script>
+</body>
+</html>
